@@ -1,0 +1,24 @@
+# -*- coding: utf-8 -*-
+from aiorequest import Request
+from aioCrawler.aiospider import Spider
+
+
+
+
+class $classname(Spider):
+    name = '$name'
+    routing_key='$routing_key'
+
+
+    def start_request(self):
+        for i in range(1,51):
+            url = 'http://125.35.6.84:81/xk/itownet/portalAction.do?method=getXkzsList'
+            data = {'page': i}
+            headers = {'User-Agent': user_agent.random}
+            request=Request(url=url,method='POST',headers=headers,data=data,callback='parse')
+            self.start_push(request)
+
+
+
+    def parse(self,response):
+        pass
