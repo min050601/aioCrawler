@@ -10,7 +10,6 @@ from aioCrawler.worker import request_run,insert_run
 log=SpiderLog(level_str='INFO')
 spider_status = multiprocessing.Array('i', [1, 1])
 def run(name,args=None):
-
     spiders=LoadSpiders()._spiders
     Spider=spiders.get(name,None)
     q = multiprocessing.Queue()
@@ -22,7 +21,6 @@ def run(name,args=None):
     p1.start()
     p2.start()
     while 1:
-        print(1111111111111111111111111111111111111111111111111111111111111111111)
         try:
             mess={}
             if spider_status[0]==0 and spider_status[1]==0:
