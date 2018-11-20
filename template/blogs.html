@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}日志{% endblock %}
+
+{% block beforehead %}
+
+<script>
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+    <div class="uk-width-medium-3-4">
+
+        <article class="uk-article">
+            <p></p>
+            <p>今日调用次数：{{ today_get}} </p>
+        </article>
+        <hr class="uk-article-divider">
+        <article class="uk-article">
+            <p></p>
+            <p>今日通过次数：{{ today_cross}}</p>
+        </article>
+        <hr class="uk-article-divider">
+        <article class="uk-article">
+            <p></p>
+            <p>历史调用次数：{{ hist_get}} </p>
+        </article>
+        <hr class="uk-article-divider">
+        <article class="uk-article">
+            <p></p>
+            <p>历史通过次数：{{ hist_cross}}</p>
+        </article>
+        <hr class="uk-article-divider">
+        <article class="uk-article">
+            <p></p>
+            <p>通过率：{{ cross_rate}}%</p>
+        </article>
+        <hr class="uk-article-divider">
+
+    </div>
+
+    <div class="uk-width-medium-1-4">
+        <div class="uk-panel uk-panel-header">
+            <h3 class="uk-panel-title">友情链接</h3>
+            <ul class="uk-list uk-list-line">
+                <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="https://www.zhihu.com/">知乎</a></li>
+                <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="https://www.douban.com/">豆瓣</a></li>
+                <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="https://pypi.org/">Python</a></li>
+                <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="https://github.com/">github</a></li>
+            </ul>
+        </div>
+    </div>
+
+{% endblock %}

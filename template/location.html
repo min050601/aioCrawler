@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html class="uk-height-1-1">
+<head>
+    <meta charset="utf-8" />
+    <title>企业资产查询结果</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <link rel="stylesheet" href="/static/css/uikit.gradient.min.css">
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/sha1.min.js"></script>
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/vue.min.js"></script>
+    <script src="/static/js/awesome.js"></script>
+    <script src="/static/js/jquery.base64.js"></script>
+    <script src="/static/js/tableExport.js"></script>
+
+    <script>
+        function exportxls(){
+        $('#AssetTable').tableExport({
+        type:'csv',
+        escape:'false',
+        fileName: '企业年报财务数据'
+        });
+    };
+        function main() {
+            $.ajax({
+                type: 'POST',
+                url: '/asset_search',
+                data: {key:'{{ key }}'},
+                dataType: 'json',
+                success: function (data) {
+                    if (data.msg == "false") {
+                        setTimeout(main, 70000);
+
+                    } else {
+                        datalist=data.data;
+                        document.getElementById("EleId").style.display="none";
+                        document.getElementById("AssetTable").style.display="inline";
+                        document.getElementById("btnExport").style.display="inline";
+                        var tableStr='';
+                        if (datalist.length>0){
+                            for ( var i = 0; i < datalist.length; i++) {
+                                tableStr = tableStr + "<tr>"
+                                +"<td width='18%' align='center' valign='middle'>"+ datalist[i][0] + "</td>"
+                                +"<td width='8%' align='center' valign='middle'>"+ datalist[i][1] +"</td>"
+                                +"<td width='9%' align='center' valign='middle'>"+ datalist[i][2] + "</td>"
+                                + "<td width='9%' align='center' valign='middle'>"+ datalist[i][3] + "</td>"
+                                + "<td width='9%' align='center' valign='middle'>"+ datalist[i][4] + "</td>"
+                                +"<td width='9%' align='center' valign='middle'>"+datalist[i][5]+"</td>"
+                                +"<td width='9%' align='center' valign='middle'>"+ datalist[i][6] +"</td>"
+                                +"<td width='9%' align='center' valign='middle'>"+ datalist[i][7] + "</td>"
+                                + "<td width='9%' align='center' valign='middle'>"+ datalist[i][8] + "</td>"
+                                + "<td width='9%' align='center' valign='middle'>"+ datalist[i][9] + "</td>"
+                                +"</tr>";
+                                    }
+                                }
+                        else{
+                                tableStr = tableStr + "<tr style='text-align: center'>"
+        +"<td colspan='10'><font color='#cd0a0a'>"+ 暂无记录 + "</font></td>"
+        +"</tr>";
+                            }
+                        $("#mytbody").html(tableStr);
+                        }
+
+                    }
+
+            }
+        );
+        }
+        main();
+
+
+
+
+    </script>
+</head>
+<body >
+    <center id="EleId" style="height: 100px">
+       <img src="/static/img/loading.png">
+    </center>
+    <div>
+        <center>
+        <Table id="AssetTable" style="display:none" border="3">
+        <thead>
+        <tr>
+            <th width="18%">企业名称</th>
+            <th width="8%">年份</th>
+            <th width="9%">资产总额</th>
+            <th width="9%">负债总额</th>
+            <th width="9%">营业总收入</th>
+            <th width="9%">主营业务收入</th>
+            <th width="9%">利润总额</th>
+            <th width="9%">净利润</th>
+            <th width="9%">纳税总额</th>
+            <th width="9%">所有者权益合计</th>
+        </tr>
+        </thead>
+        <tbody id="mytbody"></tbody>
+    </Table>
+            <button type="submit" id="btnExport" onclick="exportxls()" class="center" style="width:125px;height:50px;color:#fff;background-color:#d9534f;display:none;margin-top:50px;">导出文件</button>
+            </center>
+
+    </div>
+<script src="/static/js/mouse.js"></script>
+</body>
+</html>

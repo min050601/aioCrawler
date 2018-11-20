@@ -5,7 +5,6 @@ import re
 import json
 import random
 import brotli
-
 class ZlzpNewSpiderSpider(Spider):
     name = 'zlzp_new_spider'
     routing_key='zlzp_new_spider_request'
@@ -57,7 +56,7 @@ class ZlzpNewSpiderSpider(Spider):
 
 
     def next_parse(self,response):
-        print(response.status,response.headers)
+        # print(response.status,response.headers)
         if response.status==200:
             items=json.loads(response.content)
             data=items.get('data')
@@ -129,7 +128,7 @@ class ZlzpNewSpiderSpider(Spider):
 
 
     def info_parse(self,response):
-        print(response.status)
+        # print(response.status)
         if response.status==200:
             try:
                 content = brotli.decompress(response.content)
@@ -150,10 +149,10 @@ class ZlzpNewSpiderSpider(Spider):
                 insert_sql = '''insert ignore into zlzp_urls(entname,city,url,logo_url) VALUES (%s,%s,%s,%s)'''
                 params = (entname, response.request.meta['city'], url,companyLogo)
                 self.Pipeline.process_item((insert_sql, params))
-                print(response.request.meta,entname)
+                # print(response.request.meta,entname)
             start=response.request.params['start']
             lastUrlQuery=json.loads(response.request.params['lastUrlQuery'])
-            print('lastUrlQuery : %s ；numFound:%s' % (lastUrlQuery,numFound))
+            # print('lastUrlQuery : %s ；numFound:%s' % (lastUrlQuery,numFound))
             if start<numFound-60:
                 response.request.params['start']=start+60
                 lastUrlQuery['p']=lastUrlQuery.get('p',1)+1

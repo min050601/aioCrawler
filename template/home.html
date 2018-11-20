@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% block title %}个人中心{% endblock %}
+
+{% block beforehead %}
+
+
+
+{% endblock %}
+
+{% block content %}
+
+    <div class="uk-width-2-3">
+        <h1>个人账户</h1>
+            <div style="display: none;width: 500px;height: 200px;background: #99baca;position:absolute;left: 30%;top:30%;border-radius:5px;z-index:9999" id="bg">
+                <form action="plan" method="post" name="plan">
+                    <label>运行程序</label>
+                    <select id="spiderlist" onchange="spider_checkd()">
+
+                    </select>
+                    <label>运行频率</label>
+                    <select id="run-rule" onchange="rule_checkd()">
+                        <option value="year">每年</option>
+                        <option value="month">每月</option>
+                        <option value="week">每周</option>
+                        <option value="day">每天</option>
+                        <option value="once">一次性</option>
+                    </select>
+
+                </form>
+                <button type="submit" class="uk-button uk-button-primary" onclick="run()"><i class="uk-icon-user"></i> 确认</button>
+                    <button type="submit" class="uk-button uk-button-primary" onclick="cancel()"><i class="uk-icon-user"></i> 取消</button>
+                <script>
+                    function spider_checkd() {
+                        var objS = document.getElementById("spiderlist");
+                        objS.options[objS.selectedIndex].selected='selected';
+
+                    };
+                    function rule_checkd() {
+                        var objS = document.getElementById("run-rule");
+                        objS.options[objS.selectedIndex].selected='selected';
+
+                    };
+                </script>
+            </div>
+            <div class="uk-alert uk-alert-danger uk-hidden"></div>
+            <div class="uk-form-row" >
+                <table id="mainTable">
+                    <tr>
+                    <td style="width: 50px;height: 50px;color: #983131;font-size: 20px;" align="center">id</td>
+                    <td style="width: 80px;height: 50px;color: #983131;font-size: 20px;" align="center">pid</td>
+                    <td style="width: 400px;height: 50px;color: #983131;font-size: 20px;" align="center">name</td>
+                        <td style="width: 450px;height: 50px;color: #983131;font-size: 20px;" align="center">plan</td>
+                    <td style="width: 450px;height: 50px;color: #983131;font-size: 20px;" align="center">running status</td>
+                        <td style="width: 100px;height: 50px;color: #983131;font-size: 20px;" align="center">planed status</td>
+                    <td style="width: 300px;height: 50px;color: #983131;font-size: 20px;" align="center">start_time</td>
+                    <td style="width: 100px;height: 50px;color: #983131;font-size: 20px;" align="center">spider control</td>
+                    <td style="width: 100px;height: 50px;color: #983131;font-size: 20px;" align="center">plan control</td>
+                    </tr>
+                    <tbody id="mainbody">
+                    <!--{% for user in result %}-->
+                    <!--<tr>-->
+                        <!--<td style="width: 80px;height: 50px;color: #983131;font-size: 20px;" align="center">{{ user.pid }}</td>-->
+                        <!--<td style="width: 400px;height: 50px;color: #983131;font-size: 20px;" align="center">{{ user.spider }}</td>-->
+                        <!--<td style="width: 50px;height: 50px;color: #983131;font-size: 20px;" align="center">{{ user.status }}</td>-->
+                        <!--<td style="width: 300px;height: 50px;color: #983131;font-size: 20px;" align="center">{{ user.start_time }}</td>-->
+                    <!--</tr>-->
+                    <!--{% endfor %}-->
+                    </tbody>
+                </table>
+                <div id="xinxi"></div>
+            </div>
+
+            <div class="uk-form-row">
+                <button type="submit" class="uk-button uk-button-primary" onclick="add()"><i class="uk-icon-user"></i> 添加任务</button>
+            </div>
+
+    </div>
+<script type="text/javascript">
+    var page = 1; //当前页
+
+        Load(); //加载数据
+
+
+        function Load() {
+
+    $.ajax({
+        url: "tasks",
+        data: {
+            page: page
+        },
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+            var strpage = "";
+            var minys = 1;
+            var maxys = 1;
+           maxys=data.totalPage;
+            var str = "";
+
+           var result=data.result;
+            for(var k in result) {
+                str += "<tr><td style=\"width: 80px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
+                        result[k].id + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
+                    result[k].pid + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
+                    result[k].spider + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
+                        result[k].plan + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
+                    result[k].running_status + "</td><td style=\"width: 300px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">"+
+                        result[k].planned_status + "</td><td style=\"width: 100px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">"+
+                    result[k].start_time+"</td><td style=\"width: 300px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
+                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"spider_process("+result[k].id+","+result[k].running_status+")\"><i class=\"uk-icon-user\"></i>"
+                    +result[k].spider_process+"</button></td><td style=\"width: 300px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
+                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"plan_process("+result[k].planned_status+",'"+result[k].scheduler_id+"')\"><i class=\"uk-icon-user\"></i>"
+                    +result[k].plan_process+"</button></td></tr>";
+            }
+            $("#mainbody").html(str);
+            strpage += "<span>总共：" + maxys + "页</span>  ";
+    strpage += "<span id='prev'><a>上一页</a></span>";
+    for(var i = page - 2; i < page + 3; i++) {
+        if(i >= minys && i <= maxys) {
+            if(i == page) {
+                strpage += "<span class='dangqian' bs='" + i + "'><a>" + i + "</a></span>  ";
+            } else {
+                strpage += "<span class='list' bs='" + i + "'><a>" + i + "</a></span>  ";
+            }
+
+        }
+    }
+    strpage += "<span id='next'><a>下一页</a></span>";
+    $("#xinxi").html(strpage);
+    //给上一页添加点击事件
+    $("#prev").click(function() {
+            page = page - 1;
+            if(page < 1) {
+                page = 1;
+            }
+            Load(); //加载数据
+
+        });
+        //给下一页加点击事件
+    $("#next").click(function() {
+            page = page + 1;
+            if(page > maxys) {
+                page = maxys;
+            }
+            Load(); //加载数据
+
+        })
+
+        }
+
+    });
+
+
+};
+function add() {
+    $.ajax({
+        url: "get_spiders",
+        data: {
+
+        },
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+            var str='';
+            for(var k in data) {
+                str += "<option value="+data[k].spider+">"+data[k].spider+"</option>";
+            }
+            $("#spiderlist").html(str);}});
+    document.getElementById("bg").style.display ="block";
+
+};
+function cancel() {
+    document.getElementById("bg").style.display ="none";
+};
+function run() {
+    var spiderlist = document.getElementById("spiderlist");
+    var spider_name=spiderlist.options[spiderlist.selectedIndex].value;
+    var rule = document.getElementById("run-rule");
+    var run_rule=rule.options[rule.selectedIndex].value;
+    $.ajax({
+        url: "runspider",
+        data: {spider:spider_name,
+        rule:run_rule
+        },
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+           if (data.msg == "false") {
+                                alert("启动失败");
+
+                            } else {
+                                window.location.href=data.url
+
+
+                            }
+        }
+
+    }
+    )}
+function spider_process(id,status) {
+    $.ajax({
+        url: "spider_process",
+        data: {id:id,
+        status:status
+        },
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+           if (data.msg == "false") {
+                                alert("操作失败");
+
+                            } else {
+                                window.location.href=data.url
+
+
+                            }
+        }
+
+    }
+    )
+
+}
+function plan_process(status,id) {
+    $.ajax({
+        url: "plan_process",
+        data: {id:id,
+        status:status
+        },
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+           if (data.msg == "false") {
+                                alert("操作失败");
+
+                            } else {
+                                window.location.href=data.url
+
+
+                            }
+        }
+
+    }
+    )
+}
+</script>
+{% endblock %}

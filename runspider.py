@@ -1,15 +1,29 @@
 import os,sys
 import time
 import signal
+import datetime
+import pymysql
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,BASE_DIR)
 from aioCrawler.log import messages,SpiderLog
 from aioCrawler.actuator import LoadSpiders
 import multiprocessing
 from aioCrawler.worker import request_run,insert_run
+
+
+connect = pymysql.Connect(
+            host='127.0.0.1',
+            port=3306,
+            user='root',
+            passwd='root',
+            db='aioCrawler',
+            charset='utf8',
+            use_unicode=True
+        )
+
 log=SpiderLog(level_str='INFO')
 spider_status = multiprocessing.Array('i', [1, 1])
-def run(name,args=None):
+def run(name,plan='once',id=None,scheduler_id=None,args=None):
     spiders=LoadSpiders()._spiders
     Spider=spiders.get(name,None)
     q = multiprocessing.Queue()
@@ -20,6 +34,8 @@ def run(name,args=None):
     p2.daemon=True
     p1.start()
     p2.start()
+
+    modify_pid_status(name,1,id,plan,scheduler_id)
     while 1:
         try:
             mess={}
@@ -28,9 +44,15 @@ def run(name,args=None):
                     mess.update(q.get())
                 log.logging.info(messages(mess))
                 print('任务完成，爬虫停止')
+                modify_pid_status(name, 0,id,plan,scheduler_id)
                 return
             else:
                 time.sleep(10)
+                if not get_ospid_status():
+                    p1.terminate()
+                    p2.terminate()
+                    print('强制结束')
+                    return
         except KeyboardInterrupt:
             control=input('请选择程序停止方式：\n1：立即停止\n2：停止消费后停止\n3：取消\n')
             if control.strip()=='1':
@@ -44,16 +66,29 @@ def run(name,args=None):
 
 
 
+def get_ospid_status():
+    #pidstatus=1 运行中
+    # pidstatus=0 停止
+    cursor = connect.cursor()
+    cursor.execute(
+        "select running_status from aioCrawler.spiderStatus where pid=%s",(os.getpid(),))
 
-# def stopspider(signum=None, frame=None):
-#     print(signum,frame)
-#     log.logging.info('正在停止任务，请稍等。。。。')
-#
-#     global spider_status
-#     # if spider_status[0] == 1:spider_status[0]=2
-#     # if spider_status[1] == 1:spider_status[1] = 2
-#     time.sleep(20)
-#     exit()
+    connect.commit()
+    result = cursor.fetchall()
+    print('查询成功')
+    for i in result:
+        print(i[0],'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        return i[0]
+
+def modify_pid_status(spider,status,id,plan,scheduler_id):
+    cursor = connect.cursor()
+
+    if id:
+        cursor.execute('''update spiderStatus set pid=%s,running_status=%s,start_time=%s where id=%s''',(os.getpid(),status,datetime.datetime.now(),id))
+    else:
+        cursor.execute(
+            "insert into aioCrawler.spiderStatus(pid,spider,running_status,plan,planned_status,start_time,scheduler_id) VALUES (%s,%s,%s,%s,%s,%s,%s) on duplicate key update pid=%s,spider=%s,running_status=%s,start_time=%s", (os.getpid(),spider,status,plan,1,datetime.datetime.now(),scheduler_id,os.getpid(),spider,status,datetime.datetime.now()))
+    connect.commit()
 
 
 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html class="uk-height-1-1">
+<head>
+    <meta charset="utf-8" />
+    <title>企业资产查询</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <link rel="stylesheet" href="/static/css/uikit.gradient.min.css">
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/sha1.min.js"></script>
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/vue.min.js"></script>
+    <script src="/static/js/awesome.js"></script>
+
+    <script>
+
+$(function() {
+    var vmAuth = new Vue({
+        el: '#vm',
+        data: {
+            email: '',
+            passwd: ''
+        },
+        methods: {
+            submit: function(event) {
+                event.preventDefault();
+                var
+                    $form = $('#vm'),companys=this.multi,company = this.single;
+
+
+                if (typeof(company)=="undefined" && typeof(companys)!="undefined") {
+                    companys=this.multi.trim();
+                    data={tasks:companys,
+                    key:CryptoJS.SHA1(companys).toString()};
+
+                }
+                else if(typeof(companys)=="undefined" && typeof(company)!="undefined"){
+                    company = this.single.trim();
+                data = {
+                    tasks:company,
+                    key:CryptoJS.SHA1(company).toString()
+                }}
+                else if(typeof(company)!="undefined" && typeof(companys)!="undefined"){
+                    alert("不能一起查询");
+                    window.location.href = '/asset'
+                    }
+                else if(typeof(company)=="undefined" && typeof(companys)=="undefined"){
+                alert("两种查询方式不能都为空");
+                window.location.href = '/asset'
+                };
+                $.ajax({
+                        type: 'POST',
+                        url: '/assetspider',
+                        data: data, dataType: 'json',
+                        success: function (data) {
+                            if (data.msg == "false") {
+                                alert("查询任务失败，请通知管理员");
+
+                            } else {
+                                window.location.href=data.url
+
+
+                            }
+                        }
+                    }
+                );
+            }
+        }
+    });
+});
+
+    </script>
+</head>
+<body class="uk-height-1-1">
+    <div class="uk-vertical-align uk-text-center uk-height-1-1">
+        <div class="uk-vertical-align-middle" style="width: 640px">
+            <p><a  class="uk-icon-button"><i class="uk-icon-html5"></i></a> 企业资产查询</p>
+            <form id="vm" v-on="submit: submit" class="uk-panel uk-panel-box uk-form">
+                <div class="uk-alert uk-alert-danger uk-hidden"></div>
+                <div class="uk-form-row">
+                    <div class="uk-form-icon uk-width-1-1">
+                        <input v-model="single" name="single" type="text" placeholder="单个企业查询" maxlength="50" class="uk-width-1-1 uk-form-large">
+                    </div>
+                </div>
+                <div class="uk-form-row">
+                    <div class="uk-form-icon uk-width-1-1">
+                        <textarea v-model="multi" name="multi" type="text" placeholder="多个企业查询，请用中文逗号分隔" maxlength="500" class="uk-width-1-1 uk-form-large" style="height:100px"></textarea>
+                    </div>
+                </div>
+                <div class="uk-form-row">
+                    <button type="submit" class="uk-width-1-1 uk-button uk-button-primary uk-button-large"><i class="uk-icon-sign-in"></i> 查询</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+<script src="/static/js/mouse.js"></script>
+</body>
+</html>

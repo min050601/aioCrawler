@@ -35,18 +35,18 @@ class ZlzpCompanySpiderSpider(Spider):
 
 
     def parse(self,response):
-        if response.status!=200:
-            print(response.status,response.request.url)
+        # if response.status!=200:
+            # print(response.status,response.request.url)
         if response.status==200:
             re_tag='<script>__INITIAL_STATE__=({.*})</script>'
             match=re.findall(re_tag,response.text())
-            if not match:
-                print(response.request.url,None)
+            # if not match:
+            #     print(response.request.url,None)
             if match:
                 items = json.loads(match[0])
                 company_params = items.get('company', {})
                 if not company_params:
-                    print(response.request.url,None)
+                    # print(response.request.url,None)
                     return 
                 companyId=company_params.get('companyId')                
                 city = company_params.get('city')
