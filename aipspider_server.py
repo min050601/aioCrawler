@@ -201,7 +201,7 @@ async def create_pool(loop, **kw):
 async def init(loop,port):
     app = web.Application(loop=loop)
     aiohttp_jinja2.setup(app,
-                         loader=jinja2.FileSystemLoader(r'D:\aioCrawler\aioCrawler\template'))
+                         loader=jinja2.FileSystemLoader('/root/wander/git_local/aioCrawler/template'))
 
     app.router.add_route('POST', '/runspider', runspider)
 
@@ -211,15 +211,15 @@ async def init(loop,port):
 
     app.router.add_route('GET', '/user', home)
     app.router.add_route('POST', '/get_spiders', get_spiders)
-    app.router.add_static('/static/',
-                         path='D:/aioCrawler/aioCrawler/static',
-                         name='static')
+    # app.router.add_static('/static/',
+    #                      path='D:/aioCrawler/aioCrawler/static',
+    #                      name='static')
     app.router.add_get('/ws', websocket_handler)
     database = {
         'host': '127.0.0.1',  # 数据库的地址
         'user': 'root',
-        'password': 'root',
-        'db': 'aiocrawler'
+        'password': 'Elements123',
+        'db': 'aioCrawler'
     }
     await create_pool(loop=loop,**database)
     srv = await loop.create_server(app.make_handler(), '127.0.0.1', int(port))
