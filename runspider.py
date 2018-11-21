@@ -21,16 +21,21 @@ connect = pymysql.Connect(
             use_unicode=True
         )
 
-log=SpiderLog(level_str='INFO')
+
 spider_status = multiprocessing.Array('i', [1, 1])
 def run(name,plan='once',id=None,scheduler_id=None,args=None):
     spiders=LoadSpiders()._spiders
     Spider=spiders.get(name,None)
+    log = Spider(start=True).log
     q = multiprocessing.Queue()
     assert Spider!=None,'the moulde %s has not exist'%name
     p1 = multiprocessing.Process(target=request_run,args=(Spider,spider_status,q,args))
+    log.logging.info('request:%s'%p1.pid)
+    print(p1.pid)
     p1.daemon=True
     p2 = multiprocessing.Process(target=insert_run,args=(Spider,spider_status,args))
+    log.logging.info('response:%s' % p2.pid)
+    print(p2.pid)
     p2.daemon=True
     p1.start()
     p2.start()
