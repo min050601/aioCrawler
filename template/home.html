@@ -8,9 +8,17 @@
 {% endblock %}
 
 {% block content %}
-
+    <div style="display: none;width: 820px;height: 680px;background: #99baca;position:absolute;left: 20%;top:20%;border-radius:5px;z-index:9999" id="log">
+        <a style="display:block;position:absolute;width: 20px;height: 20px;margin-right: 20px;top:1%;right: 1%" onclick="logquit()"><img style="top:0;bottom:0;left:0;right:0;width:100%;margin:auto;" src="/static/img/close.png"></a>
+         <div id="log-container" style="height: 620px;width: 800px; background: #333; color: #aaa; padding: 10px;margin-top:30px;margin-left:-10px;overflow:scroll">
+        <div id="container">
+        </div>
+    </div>
+        </div>
     <div class="uk-width-2-3">
         <h1>个人账户</h1>
+
+
             <div style="display: none;width: 500px;height: 200px;background: #99baca;position:absolute;left: 30%;top:30%;border-radius:5px;z-index:9999" id="bg">
                 <form action="plan" method="post" name="plan">
                     <label>运行程序</label>
@@ -46,25 +54,19 @@
             <div class="uk-form-row" >
                 <table id="mainTable">
                     <tr>
-                    <td style="width: 50px;height: 50px;color: #983131;font-size: 20px;" align="center">id</td>
-                    <td style="width: 80px;height: 50px;color: #983131;font-size: 20px;" align="center">pid</td>
-                    <td style="width: 400px;height: 50px;color: #983131;font-size: 20px;" align="center">name</td>
-                        <td style="width: 450px;height: 50px;color: #983131;font-size: 20px;" align="center">plan</td>
-                    <td style="width: 450px;height: 50px;color: #983131;font-size: 20px;" align="center">running status</td>
-                        <td style="width: 100px;height: 50px;color: #983131;font-size: 20px;" align="center">planed status</td>
-                    <td style="width: 300px;height: 50px;color: #983131;font-size: 20px;" align="center">start_time</td>
-                    <td style="width: 100px;height: 50px;color: #983131;font-size: 20px;" align="center">spider control</td>
-                    <td style="width: 100px;height: 50px;color: #983131;font-size: 20px;" align="center">plan control</td>
+                    <td style="width: 50px;height: 50px;color: #983131;font-size: 15px;" align="center">序号</td>
+                    <td style="width: 150px;height: 50px;color: #983131;font-size: 15px;" align="center">进程号</td>
+                    <td style="width: 400px;height: 50px;color: #983131;font-size: 15px;" align="center">爬虫名称</td>
+                        <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">计划</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">运行状态</td>
+                        <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">计划状态</td>
+                    <td style="width: 400px;height: 50px;color: #983131;font-size: 15px;" align="center">开始时间</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">程序控制</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">计划任务</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">爬虫日志</td>
                     </tr>
                     <tbody id="mainbody">
-                    <!--{% for user in result %}-->
-                    <!--<tr>-->
-                        <!--<td style="width: 80px;height: 50px;color: #983131;font-size: 20px;" align="center">{{ user.pid }}</td>-->
-                        <!--<td style="width: 400px;height: 50px;color: #983131;font-size: 20px;" align="center">{{ user.spider }}</td>-->
-                        <!--<td style="width: 50px;height: 50px;color: #983131;font-size: 20px;" align="center">{{ user.status }}</td>-->
-                        <!--<td style="width: 300px;height: 50px;color: #983131;font-size: 20px;" align="center">{{ user.start_time }}</td>-->
-                    <!--</tr>-->
-                    <!--{% endfor %}-->
+
                     </tbody>
                 </table>
                 <div id="xinxi"></div>
@@ -99,18 +101,20 @@
 
            var result=data.result;
             for(var k in result) {
-                str += "<tr><td style=\"width: 80px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
-                        result[k].id + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
-                    result[k].pid + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
-                    result[k].spider + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
-                        result[k].plan + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
-                    result[k].running_status + "</td><td style=\"width: 300px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">"+
-                        result[k].planned_status + "</td><td style=\"width: 100px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">"+
-                    result[k].start_time+"</td><td style=\"width: 300px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
-                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"spider_process("+result[k].id+","+result[k].running_status+")\"><i class=\"uk-icon-user\"></i>"
-                    +result[k].spider_process+"</button></td><td style=\"width: 300px;height: 50px;color: #983131;font-size: 20px;\" align=\"center\">" +
-                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"plan_process("+result[k].planned_status+",'"+result[k].scheduler_id+"')\"><i class=\"uk-icon-user\"></i>"
-                    +result[k].plan_process+"</button></td></tr>";
+                str += "<tr><td style=\"width: 80px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                        result[k].id + "</td><td style=\"width: 150px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    result[k].pid + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    result[k].spider + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                        result[k].plan + "</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    result[k].running_status + "</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"+
+                        result[k].planned_status + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"+
+                    result[k].start_time+"</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"spider_process("+result[k].id+","+result[k].running_status+")\">"
+                    +result[k].spider_process+"</button></td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"plan_process("+result[k].planned_status+",'"+result[k].scheduler_id+"')\">"
+                    +result[k].plan_process+"</button></td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                        "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"ws("+result[k].running_status+",'"+result[k].spider+"')\">"
+                    +"查看"+"</button></td></tr>";
             }
             $("#mainbody").html(str);
             strpage += "<span>总共：" + maxys + "页</span>  ";
@@ -242,5 +246,59 @@ function plan_process(status,id) {
     }
     )
 }
+function ws(status,spider) {
+        // 指定websocket路径
+    var num=0;
+    document.getElementById("log").style.display ="block";
+    dragFunc("log");
+        websocket = new WebSocket('ws://127.0.0.1:8000/ws');
+        // websocket.send({status:status,spider:spider});
+    websocket.onopen = function(event){
+    if (websocket.readyState===1) {
+        websocket.send(JSON.stringify({status:status,spider:spider}));
+    }else{
+        alert('!!!!')
+    }
+    };
+
+        websocket.onmessage = function(event) {
+            // 接收服务端的实时日志并添加到HTML页面中
+            $("#log-container div").append("<p>"+event.data + "</p>");
+            // 滚动条滚动到最低部
+            $("#log-container").scrollTop($("#log-container div").height() - $("#log-container").height());
+            num++;
+            if(num>200){
+                document.getElementById("container").removeChild(document.getElementById("container").children[0]);
+                // $("#log-container div").removeChild($("#log-container div").children[0]);
+                num--
+            }
+        };
+    }
+function logquit() {
+    websocket.close();
+    $("#log-container div").empty();
+    document.getElementById("log").style.display ="none";
+}
+
+function dragFunc(id) {
+    var Drag = document.getElementById(id);
+    Drag.onmousedown = function(event) {
+        var ev = event || window.event;
+        event.stopPropagation();
+        var disX = ev.clientX - Drag.offsetLeft;
+        var disY = ev.clientY - Drag.offsetTop;
+        document.onmousemove = function(event) {
+            var ev = event || window.event;
+            Drag.style.left = ev.clientX - disX + "px";
+            Drag.style.top = ev.clientY - disY + "px";
+            Drag.style.cursor = "move";
+        };
+    };
+    Drag.onmouseup = function() {
+        document.onmousemove = null;
+        this.style.cursor = "default";
+    };
+};
+
 </script>
 {% endblock %}

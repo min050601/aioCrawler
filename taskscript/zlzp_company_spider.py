@@ -14,7 +14,7 @@ class ZlzpCompanySpiderSpider(Spider):
     routing_key='zlzp_company_spider_request'
     custom_settings = {'ALLOW_PROXY': False, 'START_SLEEP': 0.05, 'REQUEST_DELAY': 0.05, 'HEART_BEAT': 10000,
                        'CONCURRENT_NUMS': 140, 'MYSQL_DBNAME': 'wander', 'POOL_NAME': 'meituan_new',
-                       'ALLOW_STATUS': [200, 404, 302, 301], 'TIMEOUT': 20}
+                       'ALLOW_STATUS': [200, 404, 302, 301], 'TIMEOUT': 20,'LOG_FILE':'zlzp_company_spider.log'}
     ip_list=['192.144.150.152:8089','118.24.49.142:8089','111.231.189.211:8089','118.24.230.54:8089','192.144.153.89:8089','119.27.181.180:8089']
 
 

@@ -15,13 +15,16 @@ class Spider(object):
     custom_settings=None
     debug = False
 
-    def __init__(self):
+    def __init__(self,start=False):
         if self.name==None:
             raise KeyError
 
         self.settings=Settings()
         self.settings.setmodule('aioCrawler.settings', priority='project')
         self.update_settings(self.settings)
+        self.log = SpiderLog(level_str=self.settings['LOG_LEVEL'], filename=self.settings['LOG_FILE'], path=self.settings['LOG_PATH'])
+        if start:
+            return
         self.startsleep = self.settings['START_SLEEP']
         self.username=self.settings['MQ_USER']
         self.pwd=self.settings['MQ_PWD']
@@ -36,13 +39,14 @@ class Spider(object):
         self.channel_S=self.connection_T.channel()
         self.channel_S.queue_declare(queue='%s_request' % self.name,
                                      arguments={'x-max-priority': (self.settings['X_MAX_PRIORITY'] or 0)},durable=True)
-        self.log=SpiderLog(level_str=self.settings['LOG_LEVEL'],filename=self.settings['LOG_FILE'])
+
         redis_pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0)
         self.redis_conn = redis.StrictRedis(connection_pool=redis_pool)
 
     @classmethod
     def update_settings(cls, settings):
         settings.setdict(cls.custom_settings or {}, priority='spider')
+
 
     def start_request(self):
         pass

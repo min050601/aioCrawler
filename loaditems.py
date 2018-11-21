@@ -27,7 +27,7 @@ class MysqlTwistedPipeline(object):
         return
 
     def complete_log(self,item):
-        #self.log.logging.info(item[0]%item[1]+'执行成功')
+        self.log.logging.info(item[0]%item[1]+'执行成功')
         self.success_count+=1
 
 

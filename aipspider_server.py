@@ -1,4 +1,4 @@
-
+import aiohttp
 import asyncio
 from urllib.parse import parse_qs
 from aiohttp import web
@@ -14,22 +14,17 @@ import datetime
 import hashlib
 import aiomysql
 import math
-from scrapy import Selector
-from yarl import URL
 from actuator import LoadSpiders
 from apscheduler.schedulers.background import BackgroundScheduler
 from runspider import run
 import aiohttp_jinja2
 import jinja2
+import aiofiles
 os.environ["TF_CPP_MIN_LOG_LEVEL"]='3'
 redis_pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0)
 redis_conn = redis.StrictRedis(connection_pool=redis_pool)
-# detecotr = TOD()
-challenge_session=ClientSession()
 scheduler = BackgroundScheduler()
 scheduler.add_jobstore('sqlalchemy', url='mysql+pymysql://root:root@127.0.0.1/sqlalchemy')
-scheduler.start()
-
 
 
 def get_sha1(salt):
@@ -38,12 +33,31 @@ def get_sha1(salt):
         salt=salt.encode('utf-8')
     m.update(salt)
     return m.hexdigest()
+async def websocket_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    async for msg in ws:
+        if msg.type == aiohttp.WSMsgType.TEXT:
+            if msg.data == 'close':
+                await ws.close()
+            else:
+                params=json.loads(msg.data)
+                filename=params.get('spider')
+                async with aiofiles.open('./logs/%s.log'%filename,'r') as file:
+                # file=open('./logs/%s.log'%filename,'r')
+                    await file.seek(0, 2)
+                    while 1:
+                        ms=await file.readline()
+                        if ms:
+                            await ws.send_str(ms)
+                        await asyncio.sleep(0.1)
+        elif msg.type == aiohttp.WSMsgType.ERROR:
+            print('ws connection closed with exception %s' %
+                  ws.exception())
 
+    print('websocket connection closed')
 
-
-
-
-
+    return ws
 
 
 
@@ -188,19 +202,19 @@ async def init(loop,port):
     app = web.Application(loop=loop)
     aiohttp_jinja2.setup(app,
                          loader=jinja2.FileSystemLoader(r'D:\aioCrawler\aioCrawler\template'))
-    app.router.add_route('GET', '/', register)
+
     app.router.add_route('POST', '/runspider', runspider)
 
     app.router.add_route('POST', '/spider_process', spider_process)
     app.router.add_route('POST', '/tasks', tasks)
     app.router.add_route('POST', '/plan_process', plan_process)
-    app.router.add_route('GET', '/getkey', getkey)
+
     app.router.add_route('GET', '/user', home)
     app.router.add_route('POST', '/get_spiders', get_spiders)
     app.router.add_static('/static/',
                          path='D:/aioCrawler/aioCrawler/static',
                          name='static')
-    app.router.add_route('GET', '/register', register)
+    app.router.add_get('/ws', websocket_handler)
     database = {
         'host': '127.0.0.1',  # 数据库的地址
         'user': 'root',
@@ -210,6 +224,7 @@ async def init(loop,port):
     await create_pool(loop=loop,**database)
     srv = await loop.create_server(app.make_handler(), '127.0.0.1', int(port))
     print('Server started at http://127.0.0.1:%s...'%port)
+    scheduler.start()
     return srv
 
 

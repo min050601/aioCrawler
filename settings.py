@@ -7,7 +7,7 @@ X_MAX_PRIORITY=5
 #请求延时
 REQUEST_DELAY=0.1
 #数据库
-MYSQL_HOST='127.0.0.1'
+MYSQL_HOST='47.95.249.180'
 MYSQL_DBNAME='wander'
 MYSQL_USER='root'
 MYSQL_PASSWD='Elements123'
@@ -17,7 +17,7 @@ MQ_HOST='localhost'
 MQ_USER = 'guest'
 MQ_PWD = 'guest'
 
-LOG_LEVEL='INFO'
+LOG_LEVEL='DEBUG'
 
 HEART_BEAT=300
 #

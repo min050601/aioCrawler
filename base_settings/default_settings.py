@@ -17,6 +17,7 @@ MQ_USER = 'guest'
 MQ_PWD = 'guest'
 LOG_LEVEL='WARNING'
 LOG_FILE=None
+LOG_PATH='./logs/'
 #数据库连接数
 CP_MIN=3
 CP_MAX=5
