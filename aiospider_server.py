@@ -82,7 +82,7 @@ async def mqwebsocket_handler(request):
             else:
                 params=json.loads(msg.data)
                 page=params.get('page')
-                async with aiohttp.request(method='get',url='http://47.95.249.180:15672/api/queues?page=%s&page_size=100&name=&use_regex=false'%page,headers=headers) as resp:
+                async with aiohttp.request(method='get',url='http://127.0.0.1:15672/api/queues?page=%s&page_size=100&name=&use_regex=false'%page,headers=headers) as resp:
                     if resp.status==200:
                         text = await resp.text()
                         result=json.loads(text)
@@ -127,7 +127,7 @@ async def detetemq(request):
             Authorization = b64encode(b'%s:%s' % ('wander'.encode(), 'Elements123'.encode())).decode()
             headers = {'Authorization': 'Basic %s' % Authorization}
             params = {"vhost": "/", "name": name, "mode": "delete"}
-            async with aiohttp.request(method='delete', url='http://47.95.249.180:15672/api/queues/%2F/{}'.format(name),json=json.dumps(params),headers=headers) as resp:
+            async with aiohttp.request(method='delete', url='http://127.0.0.1:15672/api/queues/%2F/{}'.format(name),json=json.dumps(params),headers=headers) as resp:
                 if resp.status == 204:
                     return web.Response(
                         body=json.dumps({'msg': 'true','remark':None}, ensure_ascii=False),
