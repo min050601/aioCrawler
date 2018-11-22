@@ -3,6 +3,7 @@ import time
 import signal
 import datetime
 import pymysql
+import json
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,BASE_DIR)
 from aioCrawler.log import messages,SpiderLog
@@ -15,14 +16,14 @@ connect = pymysql.Connect(
             host='127.0.0.1',
             port=3306,
             user='root',
-            passwd='Elements123',
-            db='aioCrawler',
+            passwd='root',
+            db='aiocrawler',
             charset='utf8',
             use_unicode=True
         )
 
 
-spider_status = multiprocessing.Array('i', [1, 1])
+spider_status = multiprocessing.Array('i', [1, 1,1,1])
 def run(name,plan='once',id=None,scheduler_id=None,args=None):
     spiders=LoadSpiders()._spiders
     Spider=spiders.get(name,None)
@@ -33,7 +34,7 @@ def run(name,plan='once',id=None,scheduler_id=None,args=None):
     log.logging.info('request:%s'%p1.pid)
     print(p1.pid)
     p1.daemon=True
-    p2 = multiprocessing.Process(target=insert_run,args=(Spider,spider_status,args))
+    p2 = multiprocessing.Process(target=insert_run,args=(Spider,spider_status,q,args))
     log.logging.info('response:%s' % p2.pid)
     print(p2.pid)
     p2.daemon=True
@@ -51,13 +52,26 @@ def run(name,plan='once',id=None,scheduler_id=None,args=None):
                 print('任务完成，爬虫停止')
                 modify_pid_status(name, 0,id,plan,scheduler_id)
                 return
+            elif spider_status[2]==2 or spider_status[3]==2:
+                while not q.empty():
+                    mess.update(q.get())
+                log.logging.info(messages(mess))
+                if spider_status[2]==2:
+                    spider_status[2]=1
+                if spider_status[3]==2:
+                    spider_status[3] = 1
+                flushlog(mess)
             else:
+                spider_status[2] = 0
+                spider_status[3] = 0
                 time.sleep(10)
-                if not get_ospid_status():
+                if get_ospid_status()==0:
                     p1.terminate()
                     p2.terminate()
                     print('强制结束')
                     return
+
+
         except KeyboardInterrupt:
             control=input('请选择程序停止方式：\n1：立即停止\n2：停止消费后停止\n3：取消\n')
             if control.strip()=='1':
@@ -84,6 +98,14 @@ def get_ospid_status():
     for i in result:
         print(i[0],'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         return i[0]
+
+
+def flushlog(mess):
+
+    cursor = connect.cursor()
+    cursor.execute(
+        "update aioCrawler.spiderStatus set log=%s where pid=%s", (json.dumps(mess,ensure_ascii=False),os.getpid()))
+    connect.commit()
 
 def modify_pid_status(spider,status,id,plan,scheduler_id):
     cursor = connect.cursor()

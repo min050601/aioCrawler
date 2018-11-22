@@ -20,6 +20,8 @@ from aiohttp import TCPConnector
 #    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 #except:
 #    pass
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 look=threading.Lock()
 
 class Base_worker(object):
@@ -30,7 +32,7 @@ class Base_worker(object):
         self.last_see=time.time()
         self.spider_status = spider_status
         self.spider=spider
-        self.sem = asyncio.Semaphore(self.spider.settings['CONCURRENT_NUMS'])
+
         self.log=spider.log
         self.success_count=0
         self.spider_messages=q
@@ -148,8 +150,13 @@ class Base_worker(object):
                                     request.proxy = None
                                 result=await self.request_push(request)
                                 if not result:
-                                    self.spider_messages_copy[response.status] = self.spider_messages_copy.get(response.status,
-                                                                                                           0) + 1
+                                    self.spider_messages_copy['lose'] = self.spider_messages_copy.get(
+                                        'lose',
+                                        0) + 1
+                                else:
+                                    self.spider_messages_copy[response.status] = self.spider_messages_copy.get(
+                                        response.status,
+                                        0) + 1
                 except Exception as e:
                     self.log.logging.warning(e)
                     if session:
@@ -160,6 +167,10 @@ class Base_worker(object):
                         request.proxy = None
                     result=await self.request_push(request)
                     if not result:
+                        self.spider_messages_copy['lose'] = self.spider_messages_copy.get(
+                            'lose',
+                            0) + 1
+                    else:
                         self.spider_messages_copy['error'] = self.spider_messages_copy.get('error', 0) + 1
 
             elif request.method=='GET':
@@ -204,6 +215,10 @@ class Base_worker(object):
                                     request.proxy=None
                                 result = await self.request_push(request)
                                 if not result:
+                                    self.spider_messages_copy['lose'] = self.spider_messages_copy.get(
+                                        'lose',
+                                        0) + 1
+                                else:
                                     self.spider_messages_copy[response.status] = self.spider_messages_copy.get(
                                         response.status,
                                         0) + 1
@@ -218,6 +233,10 @@ class Base_worker(object):
                         request.proxy = None
                     result = await self.request_push(request)
                     if not result:
+                        self.spider_messages_copy['lose'] = self.spider_messages_copy.get(
+                            'lose',
+                            0) + 1
+                    else:
                         self.spider_messages_copy['error'] = self.spider_messages_copy.get('error', 0) + 1
             
             self.heartbeat_check()
@@ -356,11 +375,16 @@ class Base_worker(object):
                         new_loop.stop()
             while self.sem._value<=3:
                 print('self.sem._value:%s'%self.sem._value)
+                print('self.spider_status[2]', self.spider_status[2])
+
                 yield from asyncio.sleep(3)
             yield from channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
             request=pickle.loads(body)
             request=yield from self.middleware(request)
             asyncio.run_coroutine_threadsafe(self.worker(request, new_loop), new_loop)
+            if self.spider_status[2] == 0:
+                self.spider_messages.put(self.spider_messages_copy)
+                self.spider_status[2] = 2
 
 
 
@@ -394,7 +418,7 @@ class Base_worker(object):
 
         
         new_loop = asyncio.new_event_loop()
-        
+        self.sem = asyncio.Semaphore(self.spider.settings['CONCURRENT_NUMS'],loop=new_loop)
         t1 = threading.Thread(target=self.start_loop, args=(new_loop,))
         t2=threading.Thread(target=self.heartbeat)
         

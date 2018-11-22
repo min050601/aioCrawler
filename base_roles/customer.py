@@ -9,11 +9,13 @@ from pika.exceptions import ConnectionClosed
 
 
 class Base_customer(object):
-    def __init__(self,spider,spider_status):
+    def __init__(self,spider,spider_status,q):
         self.balance=0
         self.breakup=False
         self.last_see = time.time()
         self.spider_status=spider_status
+        self.spider_messages = q
+        self.spider_messages_copy = {}
         self.spider=spider
         self.log = spider.log
         self.username = self.spider.settings['MQ_USER']
@@ -81,6 +83,10 @@ class Base_customer(object):
 
 
             self.balance+=1
+            if self.spider_status[3]==0:
+                self.spider_messages_copy['commit'] = self.spider.commit
+                self.spider_messages.put(self.spider_messages_copy)
+
             response = pickle.loads(body)
             res_callback=response.request.callback
             try:
