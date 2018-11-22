@@ -20,6 +20,7 @@ from runspider import run
 import aiohttp_jinja2
 import jinja2
 import aiofiles
+from base64 import b64encode
 os.environ["TF_CPP_MIN_LOG_LEVEL"]='3'
 redis_pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0)
 redis_conn = redis.StrictRedis(connection_pool=redis_pool)
@@ -33,6 +34,7 @@ def get_sha1(salt):
         salt=salt.encode('utf-8')
     m.update(salt)
     return m.hexdigest()
+
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -59,7 +61,72 @@ async def websocket_handler(request):
 
     return ws
 
+async def mqwebsocket_handler(request):
+    qws = web.WebSocketResponse()
+    await qws.prepare(request)
+    Authorization = b64encode(b'%s:%s' % ('wander'.encode(), 'Elements123'.encode())).decode()
+    headers = {'Authorization': 'Basic %s' % Authorization}
+    async for msg in qws:
+        if msg.type == aiohttp.WSMsgType.TEXT:
+            if msg.data == 'close':
+                await qws.close()
+            else:
+                params=json.loads(msg.data)
+                page=params.get('page')
+                async with aiohttp.request(method='get',url='http://47.95.249.180:15672/api/queues?page=%s&page_size=100&name=&use_regex=false'%page,headers=headers) as resp:
+                    if resp.status==200:
+                        text = await resp.text()
+                        result=json.loads(text)
+                        item_count = result.get('item_count')
+                        items=result.get('items',[])
+                        resp_list=[]
+                        for item in items:
+                            mq_dict={}
+                            mq_dict['name']=item.get('name')
+                            features=''
+                            if item.get('durable'):
+                                features+='D'
+                            if item.get('arguments').get('x-max-priority'):
+                                features+='|Pri'
+                            mq_dict['features']=features
+                            mq_dict['state']=item.get('state')
+                            mq_dict['ready'] = item.get('messages_ready')
+                            mq_dict['unacked'] = item.get('messages_unacknowledged')
+                            mq_dict['total'] = item.get('messages')
+                            mq_dict['incoming'] = ('%s/s' if item.get('message_stats',{}).get('publish_details',{}).get('rate',0) else '%s')%item.get('message_stats',{}).get('publish_details',{}).get('rate',0)
+                            mq_dict['deliver'] = ('%s/s' if item.get('message_stats', {}).get('deliver_get_details', {}).get('rate',0) else '%s')%item.get('message_stats', {}).get('deliver_get_details', {}).get('rate',0)
+                            mq_dict['ack'] = ('%s/s' if item.get('message_stats', {}).get('ack_details', {}).get('rate',0) else '%s')%item.get('message_stats', {}).get('ack_details', {}).get('rate',0)
+                            resp_list.append(mq_dict)
+                        await qws.send_json({"items": resp_list, "totalPage": math.ceil(item_count/ 100)})
 
+
+        elif msg.type == aiohttp.WSMsgType.ERROR:
+            print('ws connection closed with exception %s' %
+                  qws.exception())
+
+    print('websocket connection closed')
+
+    return qws
+
+
+async def detetemq(request):
+    data = await request.post()
+    name=data.get('name')
+    if name:
+        Authorization = b64encode(b'%s:%s' % ('wander'.encode(), 'Elements123'.encode())).decode()
+        headers = {'Authorization': 'Basic %s' % Authorization}
+        params = {"vhost": "/", "name": name, "mode": "delete"}
+        async with aiohttp.request(method='delete', url='http://47.95.249.180:15672/api/queues/%2F/{}'.format(name),json=json.dumps(params),headers=headers) as resp:
+            if resp.status == 204:
+                return web.Response(
+                    body=json.dumps({'msg': 'true','remark':None}, ensure_ascii=False),
+                    content_type='text/html')
+            elif resp.status==404:
+                text = await resp.text()
+                result=json.loads(text)
+                return web.Response(
+                    body=json.dumps({'msg': 'true','remark':result}, ensure_ascii=False),
+                    content_type='text/html')
 
 
 async def tasks(request):
@@ -173,9 +240,24 @@ async def spider_process(request):
                 return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
 
 
+async def deletespider(request):
+    data = await request.post()
+    id=data.get('id')
+    scheduler_id=data.get('scheduler_id')
+    if scheduler_id:
+        scheduler.remove_job(scheduler_id)
+    if id:
+        global __pool
+        async with __pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("delete from spiderStatus where id=%s", (id,))
+                # await conn.commit()
+                return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
+
+
 @aiohttp_jinja2.template('home.html')
 async def home(request):
-    return
+    return {"__user__": "wander"}
 
 
 
@@ -201,7 +283,7 @@ async def create_pool(loop, **kw):
 async def init(loop,port):
     app = web.Application(loop=loop)
     aiohttp_jinja2.setup(app,
-                         loader=jinja2.FileSystemLoader('/root/wander/git_local/aioCrawler/template'))
+                         loader=jinja2.FileSystemLoader('D:/aioCrawler/aioCrawler/template'))
 
     app.router.add_route('POST', '/runspider', runspider)
 
@@ -211,14 +293,17 @@ async def init(loop,port):
 
     app.router.add_route('GET', '/user', home)
     app.router.add_route('POST', '/get_spiders', get_spiders)
-    # app.router.add_static('/static/',
-    #                      path='D:/aioCrawler/aioCrawler/static',
-    #                      name='static')
+    app.router.add_route('POST','/deletemq',detetemq)
+    app.router.add_route('POST','/deletespider',deletespider)
+    app.router.add_static('/static/',
+                         path='D:/aioCrawler/aioCrawler/static',
+                         name='static')
     app.router.add_get('/ws', websocket_handler)
+    app.router.add_get('/qws', mqwebsocket_handler)
     database = {
         'host': '127.0.0.1',  # 数据库的地址
         'user': 'root',
-        'password': 'Elements123',
+        'password': 'root',
         'db': 'aioCrawler'
     }
     await create_pool(loop=loop,**database)

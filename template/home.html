@@ -15,11 +15,7 @@
         </div>
     </div>
         </div>
-    <div class="uk-width-2-3">
-        <h1>个人账户</h1>
-
-
-            <div style="display: none;width: 500px;height: 200px;background: #99baca;position:absolute;left: 30%;top:30%;border-radius:5px;z-index:9999" id="bg">
+    <div style="display: none;width: 500px;height: 200px;background: #99baca;position:absolute;left: 30%;top:30%;border-radius:5px;z-index:9999" id="bg">
                 <form action="plan" method="post" name="plan">
                     <label>运行程序</label>
                     <select id="spiderlist" onchange="spider_checkd()">
@@ -50,6 +46,8 @@
                     };
                 </script>
             </div>
+    <div class="uk-width-2-3" id="programs">
+        <h1>爬虫项目</h1>
             <div class="uk-alert uk-alert-danger uk-hidden"></div>
             <div class="uk-form-row" >
                 <table id="mainTable">
@@ -64,6 +62,7 @@
                     <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">程序控制</td>
                     <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">计划任务</td>
                     <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">爬虫日志</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center"></td>
                     </tr>
                     <tbody id="mainbody">
 
@@ -77,86 +76,107 @@
             </div>
 
     </div>
-<script type="text/javascript">
-    var page = 1; //当前页
+    <div class="uk-width-2-3" id="queue" style="display: none">
+        <h1>爬虫队列</h1>
+            <div class="uk-alert uk-alert-danger uk-hidden"></div>
+            <div class="uk-form-row" >
+                <table id="queueTable">
+                    <tr>
+                    <td style="width: 50px;height: 50px;color: #983131;font-size: 15px;" align="center">name</td>
+                    <td style="width: 150px;height: 50px;color: #983131;font-size: 15px;" align="center">Features</td>
+                    <td style="width: 400px;height: 50px;color: #983131;font-size: 15px;" align="center">State</td>
+                        <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">Ready</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">Unacked</td>
+                        <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">Total</td>
+                    <td style="width: 400px;height: 50px;color: #983131;font-size: 15px;" align="center">incoming</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">deliver/get</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">ack</td>
+                    <td style="width: 200px;height: 50px;color: #983131;font-size: 15px;" align="center">delete</td>
+                    </tr>
+                    <tbody id="queuebody">
 
+                    </tbody>
+                </table>
+                <div id="mqxinxi"></div>
+            </div>
+
+    </div>
+<script type="text/javascript">
+    var page = 1; //项目当前页
+    var mqpage=1;//队列当前页
+    Load(); //项目加载数据
+
+    function Load() {$.ajax({
+    url: "tasks",
+    data: {
+        page: page
+    },
+    type: "POST",
+    dataType: "JSON",
+    success: function(data) {
+        var strpage = "";
+        var minys = 1;
+        var maxys = 1;
+       maxys=data.totalPage;
+        var str = "";
+
+       var result=data.result;
+        for(var k in result) {
+            str += "<tr><td style=\"width: 80px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    result[k].id + "</td><td style=\"width: 150px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                result[k].pid + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                result[k].spider + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    result[k].plan + "</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                result[k].running_status + "</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"+
+                    result[k].planned_status + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"+
+                result[k].start_time+"</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"spider_process("+result[k].id+","+result[k].running_status+")\">"
+                +result[k].spider_process+"</button></td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"plan_process("+result[k].planned_status+",'"+result[k].scheduler_id+"')\">"
+                +result[k].plan_process+"</button></td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"ws("+result[k].running_status+",'"+result[k].spider+"')\">"
+                +"查看"+"</button></td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"removetask("+result[k].running_status+","+result[k].id+",'"+result[k].scheduler_id+"')\">"+
+                "移除"+"</button></td></tr>";
+        }
+        $("#mainbody").html(str);
+        strpage += "<span>总共：" + maxys + "页</span>  ";
+strpage += "<span id='prev'><a>上一页</a></span>";
+for(var i = page - 2; i < page + 3; i++) {
+    if(i >= minys && i <= maxys) {
+        if(i == page) {
+            strpage += "<span class='dangqian' bs='" + i + "'><a>" + i + "</a></span>  ";
+        } else {
+            strpage += "<span class='list' bs='" + i + "'><a>" + i + "</a></span>  ";
+        }
+
+    }
+}
+strpage += "<span id='next'><a>下一页</a></span>";
+$("#xinxi").html(strpage);
+//给上一页添加点击事件
+$("#prev").click(function() {
+        page = page - 1;
+        if(page < 1) {
+            page = 1;
+        }
         Load(); //加载数据
 
-
-        function Load() {
-
-    $.ajax({
-        url: "tasks",
-        data: {
-            page: page
-        },
-        type: "POST",
-        dataType: "JSON",
-        success: function(data) {
-            var strpage = "";
-            var minys = 1;
-            var maxys = 1;
-           maxys=data.totalPage;
-            var str = "";
-
-           var result=data.result;
-            for(var k in result) {
-                str += "<tr><td style=\"width: 80px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
-                        result[k].id + "</td><td style=\"width: 150px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
-                    result[k].pid + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
-                    result[k].spider + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
-                        result[k].plan + "</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
-                    result[k].running_status + "</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"+
-                        result[k].planned_status + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"+
-                    result[k].start_time+"</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
-                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"spider_process("+result[k].id+","+result[k].running_status+")\">"
-                    +result[k].spider_process+"</button></td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
-                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"plan_process("+result[k].planned_status+",'"+result[k].scheduler_id+"')\">"
-                    +result[k].plan_process+"</button></td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
-                        "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"ws("+result[k].running_status+",'"+result[k].spider+"')\">"
-                    +"查看"+"</button></td></tr>";
-            }
-            $("#mainbody").html(str);
-            strpage += "<span>总共：" + maxys + "页</span>  ";
-    strpage += "<span id='prev'><a>上一页</a></span>";
-    for(var i = page - 2; i < page + 3; i++) {
-        if(i >= minys && i <= maxys) {
-            if(i == page) {
-                strpage += "<span class='dangqian' bs='" + i + "'><a>" + i + "</a></span>  ";
-            } else {
-                strpage += "<span class='list' bs='" + i + "'><a>" + i + "</a></span>  ";
-            }
-
-        }
-    }
-    strpage += "<span id='next'><a>下一页</a></span>";
-    $("#xinxi").html(strpage);
-    //给上一页添加点击事件
-    $("#prev").click(function() {
-            page = page - 1;
-            if(page < 1) {
-                page = 1;
-            }
-            Load(); //加载数据
-
-        });
-        //给下一页加点击事件
-    $("#next").click(function() {
-            page = page + 1;
-            if(page > maxys) {
-                page = maxys;
-            }
-            Load(); //加载数据
-
-        })
-
-        }
-
     });
+    //给下一页加点击事件
+$("#next").click(function() {
+        page = page + 1;
+        if(page > maxys) {
+            page = maxys;
+        }
+        Load(); //加载数据
 
+    })
 
-};
-function add() {
+    }
+
+});}
+    function add() {
     $.ajax({
         url: "get_spiders",
         data: {
@@ -172,11 +192,11 @@ function add() {
             $("#spiderlist").html(str);}});
     document.getElementById("bg").style.display ="block";
 
-};
-function cancel() {
+}
+    function cancel() {
     document.getElementById("bg").style.display ="none";
-};
-function run() {
+}
+    function run() {
     var spiderlist = document.getElementById("spiderlist");
     var spider_name=spiderlist.options[spiderlist.selectedIndex].value;
     var rule = document.getElementById("run-rule");
@@ -201,7 +221,7 @@ function run() {
 
     }
     )}
-function spider_process(id,status) {
+    function spider_process(id,status) {
     $.ajax({
         url: "spider_process",
         data: {id:id,
@@ -224,7 +244,7 @@ function spider_process(id,status) {
     )
 
 }
-function plan_process(status,id) {
+    function plan_process(status,id) {
     $.ajax({
         url: "plan_process",
         data: {id:id,
@@ -246,7 +266,7 @@ function plan_process(status,id) {
     }
     )
 }
-function ws(status,spider) {
+    function ws(status,spider) {
         // 指定websocket路径
     var num=0;
     document.getElementById("log").style.display ="block";
@@ -274,13 +294,12 @@ function ws(status,spider) {
             }
         };
     }
-function logquit() {
+    function logquit() {
     websocket.close();
     $("#log-container div").empty();
     document.getElementById("log").style.display ="none";
 }
-
-function dragFunc(id) {
+    function dragFunc(id) {
     var Drag = document.getElementById(id);
     Drag.onmousedown = function(event) {
         var ev = event || window.event;
@@ -298,7 +317,133 @@ function dragFunc(id) {
         document.onmousemove = null;
         this.style.cursor = "default";
     };
-};
+}
+    function programs() {
+        document.getElementById("programs").style.display ="block";
+        document.getElementById("queue").style.display ="none";
+        qws.close();
+        mqpage=1;
+}
+    function queues() {
+        qws = new WebSocket('ws://127.0.0.1:8000/qws');
+        qws.onopen = function(event){
+            if (qws.readyState===1) {
+                qws.send(JSON.stringify({page:mqpage}));
+            }else{
+                alert('!!!!')
+            }
+        };
+        qws.onmessage = function(event) {
+            var str = "";
+            var strpage="";
+            var mqminys = 1;
+            // var mqmaxys = 1;
+            var data=$.parseJSON(event.data);
+            var mqmaxys=data['totalPage'];
+            var items=data['items'];
+            for (var k in items){
+                str += "<tr><td style=\"width: 80px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    items[k].name + "</td><td style=\"width: 150px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                items[k].features + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                items[k].state + "</td><td style=\"width: 50px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    items[k].ready + "</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                items[k].unacked + "</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"+
+                    items[k].total + "</td><td style=\"width: 400px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"+
+                items[k].incoming+"</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"
+                +items[k].deliver+"</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">"
+                +items[k].ack+"</td><td style=\"width: 200px;height: 50px;color: #983131;font-size: 15px;\" align=\"center\">" +
+                    "<button type=\"submit\" class=\"uk-button uk-button-primary\" onclick=\"deletemq('"+items[k].name+"')\">"
+                +"删除"+"</button></td></tr>";
+            }
+            $("#queuebody").html(str);
+            strpage += "<span>总共：" + mqmaxys + "页</span>  ";
+            strpage += "<span id='mqprev'><a>上一页</a></span>";
+            for(var i = mqpage - 2; i < mqpage + 3; i++) {
+                if(i >= mqminys && i <= mqmaxys) {
+                    if(i == mqpage) {
+                        strpage += "<span class='dangqian' bs='" + i + "'><a>" + i + "</a></span>  ";
+                    } else {
+                        strpage += "<span class='list' bs='" + i + "'><a>" + i + "</a></span>  ";
+                    }
 
+                }
+            }
+            strpage += "<span id='mqnext'><a>下一页</a></span>";
+            $("#mqxinxi").html(strpage);
+            document.getElementById("programs").style.display ="none";
+            document.getElementById("queue").style.display ="block";
+
+            //给上一页添加点击事件
+            $("#mqprev").click(function() {
+                    mqpage = mqpage - 1;
+                    if(mqpage < 1) {
+                        mqpage = 1;
+                    }
+                    qws.send(JSON.stringify({page:mqpage}));
+
+                });
+                //给下一页加点击事件
+            $("#mqnext").click(function() {
+                    mqpage = mqpage + 1;
+                    if(mqpage > mamaxys) {
+                        mqpage = mamaxys;
+                    }
+                    qws.send(JSON.stringify({page:mqpage}));
+
+
+                });
+            timename=setTimeout(setqwsInterval,3000);
+
+
+        };
+    }
+    function setqwsInterval() {
+        if (qws.readyState===1) {
+                qws.send(JSON.stringify({page:mqpage}));
+            }
+    }
+    function deletemq(name) {
+        contorl=window.confirm("确定要删除队列："+name+"？");
+        if (contorl){$.ajax({
+        url: "deletemq",
+        data: {
+            name: name
+        },
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+            if(data.msg== "false"){
+            alert(data.remark)}
+            else {qws.send(JSON.stringify({page:mqpage}))}
+        }
+    })}
+        }
+    function removetask(status,id,scheduler_id) {
+        if (status==1){
+            alert("正在运行，请停止后再移除")
+        }
+        else {
+            contorl=window.confirm("确定要移除该任务？");
+            if (contorl){$.ajax({
+        url: "deletespider",
+        data: {
+            id: id,
+            scheduler_id:scheduler_id
+        },
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+           if (data.msg == "false") {
+                                alert("移除失败");
+
+                            } else {
+                                window.location.href=data.url
+
+
+                            }
+        }
+    })}
+        }
+    }
 </script>
 {% endblock %}
