@@ -16,6 +16,7 @@ import aiomysql
 import math
 from actuator import LoadSpiders
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.executors.pool import ProcessPoolExecutor
 from runspider import run
 import aiohttp_jinja2
 import jinja2
@@ -26,7 +27,9 @@ from base64 import b64encode
 os.environ["TF_CPP_MIN_LOG_LEVEL"]='3'
 redis_pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0)
 redis_conn = redis.StrictRedis(connection_pool=redis_pool)
-scheduler = BackgroundScheduler()
+job_defaults = {'coalesce': True,'max_instances':10}
+executors = {'default': ProcessPoolExecutor(10)}
+scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
 scheduler.add_jobstore('sqlalchemy', url='mysql+pymysql://root:root@127.0.0.1/sqlalchemy')
 
 
@@ -241,15 +244,21 @@ async def spider_process(request):
                     if rule == 'once':
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1),id=scheduler_id)
                     elif rule == 'day':
-                        scheduler.remove_job(scheduler_id)
+                        if scheduler.get_job(scheduler_id):
+                            if scheduler.get_job(scheduler_id):
+                                scheduler.remove_job(scheduler_id)
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', days=1,id=scheduler_id)
                     elif rule == 'week':
-                        scheduler.remove_job(scheduler_id)
+                        if scheduler.get_job(scheduler_id):
+                            if scheduler.get_job(scheduler_id):
+                                scheduler.remove_job(scheduler_id)
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', weeks=1,id=scheduler_id)
                     elif rule == 'month':
-                        scheduler.remove_job(scheduler_id)
+                        if scheduler.get_job(scheduler_id):
+                            if scheduler.get_job(scheduler_id):
+                                scheduler.remove_job(scheduler_id)
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', days=30,id=scheduler_id)
                     await asyncio.sleep(3)
@@ -263,7 +272,9 @@ async def deletespider(request):
         id=data.get('id')
         scheduler_id=data.get('scheduler_id')
         if scheduler_id:
-            scheduler.remove_job(scheduler_id)
+            if scheduler.get_job(scheduler_id):
+                if scheduler.get_job(scheduler_id):
+                    scheduler.remove_job(scheduler_id)
         if id:
             global __pool
             async with __pool.acquire() as conn:
@@ -277,7 +288,7 @@ async def deletespider(request):
 async def home(request):
     session = await get_session(request)
     if session.get('AUTHORIZATIONUSERS'):
-        return {"__user__": session['AUTHORIZATIONUSERS']}
+        return {"__user__":{'name': session['AUTHORIZATIONUSERS']}}
     else:
         return {}
 
@@ -345,8 +356,8 @@ async def init(loop,port):
     app.router.add_route('POST', '/logout', logout)
     app.router.add_route('GET', '/', login)
     app.router.add_static('/static/',
-                         path='D:/aioCrawler/aioCrawler/static',
-                         name='static')
+                        path='D:/aioCrawler/aioCrawler/static',
+                        name='static')
     app.router.add_get('/ws', websocket_handler)
     app.router.add_get('/qws', mqwebsocket_handler)
     database = {
