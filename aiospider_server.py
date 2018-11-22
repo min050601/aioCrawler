@@ -79,7 +79,7 @@ async def mqwebsocket_handler(request):
             else:
                 params=json.loads(msg.data)
                 page=params.get('page')
-                async with aiohttp.request(method='get',url='http://47.95.249.180:15672/api/queues?page=%s&page_size=100&name=&use_regex=false'%page,headers=headers) as resp:
+                async with aiohttp.request(method='get',url='http://127.0.0.1:15672/api/queues?page=%s&page_size=100&name=&use_regex=false'%page,headers=headers) as resp:
                     if resp.status==200:
                         text = await resp.text()
                         result=json.loads(text)
