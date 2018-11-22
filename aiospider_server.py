@@ -20,6 +20,8 @@ from runspider import run
 import aiohttp_jinja2
 import jinja2
 import aiofiles
+from aiohttp_session import get_session, setup
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from base64 import b64encode
 os.environ["TF_CPP_MIN_LOG_LEVEL"]='3'
 redis_pool = redis.ConnectionPool(host='127.0.0.1', port=6379, db=0)
@@ -43,16 +45,20 @@ async def websocket_handler(request):
             if msg.data == 'close':
                 await ws.close()
             else:
-                params=json.loads(msg.data)
-                filename=params.get('spider')
-                async with aiofiles.open('./logs/%s.log'%filename,'r') as file:
-                # file=open('./logs/%s.log'%filename,'r')
-                    await file.seek(0, 2)
-                    while 1:
-                        ms=await file.readline()
-                        if ms:
-                            await ws.send_str(ms)
-                        await asyncio.sleep(0.1)
+                session = await get_session(request)
+                if session.get('AUTHORIZATIONUSERS'):
+                    params=json.loads(msg.data)
+                    filename=params.get('spider')
+                    async with aiofiles.open('./logs/%s.log'%filename,'r') as file:
+                    # file=open('./logs/%s.log'%filename,'r')
+                        await file.seek(0, 2)
+                        while 1:
+                            ms=await file.readline()
+                            if ms:
+                                await ws.send_str(ms)
+                            await asyncio.sleep(0.1)
+                else:
+                    await ws.send_str('请登录后查看！！！')
         elif msg.type == aiohttp.WSMsgType.ERROR:
             print('ws connection closed with exception %s' %
                   ws.exception())
@@ -110,23 +116,25 @@ async def mqwebsocket_handler(request):
 
 
 async def detetemq(request):
-    data = await request.post()
-    name=data.get('name')
-    if name:
-        Authorization = b64encode(b'%s:%s' % ('wander'.encode(), 'Elements123'.encode())).decode()
-        headers = {'Authorization': 'Basic %s' % Authorization}
-        params = {"vhost": "/", "name": name, "mode": "delete"}
-        async with aiohttp.request(method='delete', url='http://47.95.249.180:15672/api/queues/%2F/{}'.format(name),json=json.dumps(params),headers=headers) as resp:
-            if resp.status == 204:
-                return web.Response(
-                    body=json.dumps({'msg': 'true','remark':None}, ensure_ascii=False),
-                    content_type='text/html')
-            elif resp.status==404:
-                text = await resp.text()
-                result=json.loads(text)
-                return web.Response(
-                    body=json.dumps({'msg': 'true','remark':result}, ensure_ascii=False),
-                    content_type='text/html')
+    session = await get_session(request)
+    if session.get('AUTHORIZATIONUSERS'):
+        data = await request.post()
+        name=data.get('name')
+        if name:
+            Authorization = b64encode(b'%s:%s' % ('wander'.encode(), 'Elements123'.encode())).decode()
+            headers = {'Authorization': 'Basic %s' % Authorization}
+            params = {"vhost": "/", "name": name, "mode": "delete"}
+            async with aiohttp.request(method='delete', url='http://47.95.249.180:15672/api/queues/%2F/{}'.format(name),json=json.dumps(params),headers=headers) as resp:
+                if resp.status == 204:
+                    return web.Response(
+                        body=json.dumps({'msg': 'true','remark':None}, ensure_ascii=False),
+                        content_type='text/html')
+                elif resp.status==404:
+                    text = await resp.text()
+                    result=json.loads(text)
+                    return web.Response(
+                        body=json.dumps({'msg': 'true','remark':result}, ensure_ascii=False),
+                        content_type='text/html')
 
 
 async def tasks(request):
@@ -149,120 +157,155 @@ async def tasks(request):
 
 
 async def get_spiders(request):
-    spiders = LoadSpiders()._spiders
-    tasks = []
-    for k,v in spiders.items():
-        tasks.append({'spider':k})
-    return web.Response(body=json.dumps(tasks, ensure_ascii=False), content_type='text/html')
+    session = await get_session(request)
+    if session.get('AUTHORIZATIONUSERS'):
+        spiders = LoadSpiders()._spiders
+        tasks = []
+        for k,v in spiders.items():
+            tasks.append({'spider':k})
+        return web.Response(body=json.dumps(tasks, ensure_ascii=False), content_type='text/html')
 
 
 async def runspider(request):
-    data = await request.post()
-    spider=data.get('spider')
-    rule=data.get('rule')
-    id=data.get('id')
-    scheduler_id=spider+datetime.datetime.now().strftime('%Y-%m-%d:%H:%M:%S')
-    print(spider,rule)
-    if rule=='once':
-        scheduler.add_job(func=run, args=(spider,rule,id,scheduler_id),trigger='date', run_date=datetime.datetime.now()+datetime.timedelta(seconds=1),id=scheduler_id)
-    elif rule=='day':
-        scheduler.add_job(func=run, args=(spider, rule, id,scheduler_id), trigger='date', run_date=datetime.datetime.now())
-        scheduler.add_job(func=run, args=(spider, rule, id,scheduler_id), trigger='interval', days=1,id=scheduler_id)
-    elif rule=='week':
-        scheduler.add_job(func=run, args=(spider, rule, id,scheduler_id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
-        scheduler.add_job(func=run, args=(spider,rule,id,scheduler_id), trigger='interval', weeks=1,id=scheduler_id)
-    elif rule=='month':
-        scheduler.add_job(func=run, args=(spider, rule, id,scheduler_id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
-        scheduler.add_job(func=run, args=(spider,rule,id,scheduler_id), trigger='interval', days=30,id=scheduler_id)
+    session = await get_session(request)
+    if session.get('AUTHORIZATIONUSERS'):
+        data = await request.post()
+        spider=data.get('spider')
+        rule=data.get('rule')
+        id=data.get('id')
+        scheduler_id=spider+datetime.datetime.now().strftime('%Y-%m-%d:%H:%M:%S')
+        print(spider,rule)
+        if rule=='once':
+            scheduler.add_job(func=run, args=(spider,rule,id,scheduler_id),trigger='date', run_date=datetime.datetime.now()+datetime.timedelta(seconds=1),id=scheduler_id)
+        elif rule=='day':
+            scheduler.add_job(func=run, args=(spider, rule, id,scheduler_id), trigger='date', run_date=datetime.datetime.now())
+            scheduler.add_job(func=run, args=(spider, rule, id,scheduler_id), trigger='interval', days=1,id=scheduler_id)
+        elif rule=='week':
+            scheduler.add_job(func=run, args=(spider, rule, id,scheduler_id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
+            scheduler.add_job(func=run, args=(spider,rule,id,scheduler_id), trigger='interval', weeks=1,id=scheduler_id)
+        elif rule=='month':
+            scheduler.add_job(func=run, args=(spider, rule, id,scheduler_id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
+            scheduler.add_job(func=run, args=(spider,rule,id,scheduler_id), trigger='interval', days=30,id=scheduler_id)
 
-    await asyncio.sleep(3)
+        await asyncio.sleep(3)
 
 
-    return web.Response(
-            body=json.dumps({'msg': 'true', 'url': '/user'}, ensure_ascii=False),
-            content_type='text/html')
+        return web.Response(
+                body=json.dumps({'msg': 'true', 'url': '/user'}, ensure_ascii=False),
+                content_type='text/html')
 
 
 async def plan_process(request):
-    data = await request.post()
-    id = data.get('id')
-    status = data.get('status')
-    global __pool
-    async with __pool.acquire() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute("select plan from spiderStatus where scheduler_id=%s", (id,))
-            result = await cur.fetchone()
-            if result[0]!='once':
-                if int(status):
-                    scheduler.pause_job(id)
-                else:
-                    scheduler.resume_job(id)
-                await cur.execute("update spiderStatus set planned_status=%s where scheduler_id=%s", (0 if int(status) else 1,id))
-            return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
+    session = await get_session(request)
+    if session.get('AUTHORIZATIONUSERS'):
+        data = await request.post()
+        id = data.get('id')
+        status = data.get('status')
+        global __pool
+        async with __pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("select plan from spiderStatus where scheduler_id=%s", (id,))
+                result = await cur.fetchone()
+                if result[0]!='once':
+                    if int(status):
+                        scheduler.pause_job(id)
+                    else:
+                        scheduler.resume_job(id)
+                    await cur.execute("update spiderStatus set planned_status=%s where scheduler_id=%s", (0 if int(status) else 1,id))
+                return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
 
 
 
 async def spider_process(request):
-    data = await request.post()
-    id=data.get('id')
-    status=data.get('status')
-    global __pool
-    if int(status):
+    session = await get_session(request)
+    if session.get('AUTHORIZATIONUSERS'):
+        data = await request.post()
+        id=data.get('id')
+        status=data.get('status')
+        global __pool
+        if int(status):
 
-        async with __pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("update spiderStatus set running_status=%s where id=%s",(0,id))
-                return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
-    else:
+            async with __pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("update spiderStatus set running_status=%s where id=%s",(0,id))
+                    return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
+        else:
 
-        async with __pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("select spider,plan,scheduler_id from spiderStatus where id=%s", (id,))
-                result = await cur.fetchone()
-                scheduler_id=result[2]
-                rule=result[1]
-                spider=result[0]
-                if rule == 'once':
-                    scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1),id=scheduler_id)
-                elif rule == 'day':
-                    scheduler.remove_job(scheduler_id)
-                    scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
-                    scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', days=1,id=scheduler_id)
-                elif rule == 'week':
-                    scheduler.remove_job(scheduler_id)
-                    scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
-                    scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', weeks=1,id=scheduler_id)
-                elif rule == 'month':
-                    scheduler.remove_job(scheduler_id)
-                    scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
-                    scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', days=30,id=scheduler_id)
-                await asyncio.sleep(3)
-                return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
+            async with __pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("select spider,plan,scheduler_id from spiderStatus where id=%s", (id,))
+                    result = await cur.fetchone()
+                    scheduler_id=result[2]
+                    rule=result[1]
+                    spider=result[0]
+                    if rule == 'once':
+                        scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1),id=scheduler_id)
+                    elif rule == 'day':
+                        scheduler.remove_job(scheduler_id)
+                        scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
+                        scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', days=1,id=scheduler_id)
+                    elif rule == 'week':
+                        scheduler.remove_job(scheduler_id)
+                        scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
+                        scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', weeks=1,id=scheduler_id)
+                    elif rule == 'month':
+                        scheduler.remove_job(scheduler_id)
+                        scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
+                        scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', days=30,id=scheduler_id)
+                    await asyncio.sleep(3)
+                    return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
 
 
 async def deletespider(request):
-    data = await request.post()
-    id=data.get('id')
-    scheduler_id=data.get('scheduler_id')
-    if scheduler_id:
-        scheduler.remove_job(scheduler_id)
-    if id:
-        global __pool
-        async with __pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("delete from spiderStatus where id=%s", (id,))
-                # await conn.commit()
-                return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
+    session = await get_session(request)
+    if session.get('AUTHORIZATIONUSERS'):
+        data = await request.post()
+        id=data.get('id')
+        scheduler_id=data.get('scheduler_id')
+        if scheduler_id:
+            scheduler.remove_job(scheduler_id)
+        if id:
+            global __pool
+            async with __pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("delete from spiderStatus where id=%s", (id,))
+                    # await conn.commit()
+                    return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
 
 
 @aiohttp_jinja2.template('home.html')
 async def home(request):
-    return {"__user__": "wander"}
+    session = await get_session(request)
+    if session.get('AUTHORIZATIONUSERS'):
+        return {"__user__": session['AUTHORIZATIONUSERS']}
+    else:
+        return {}
+
+@aiohttp_jinja2.template('signin.html')
+async def login(request):
+    return
 
 
+async def login1(request):
+    session = await get_session(request)
+    data = await request.post()
+    email=data.get('email')
+    passwd=data.get('passwd')
+    global __pool
+    async with __pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("select email from authorizationusers where passwd=%s", (passwd,))
+            result = await cur.fetchone()
+            if result[0]==email:
+                session['AUTHORIZATIONUSERS'] = email
+                return web.Response(body=json.dumps({'msg': 'true', 'url': '/user'}, ensure_ascii=False), content_type='text/html')
+            else:
+                return web.Response(body=json.dumps({'msg': 'false'}, ensure_ascii=False), content_type='text/html')
 
-
-
+async def logout(request):
+    session = await get_session(request)
+    session['AUTHORIZATIONUSERS'] = None
+    return web.Response(body=json.dumps({'msg': 'true', 'url': '/login'}, ensure_ascii=False), content_type='text/html')
 
 
 async def create_pool(loop, **kw):
@@ -282,6 +325,8 @@ async def create_pool(loop, **kw):
 
 async def init(loop,port):
     app = web.Application(loop=loop)
+    setup(app,
+          EncryptedCookieStorage(b'Thirty  two  length  bytes  key.'))
     aiohttp_jinja2.setup(app,
                          loader=jinja2.FileSystemLoader('D:/aioCrawler/aioCrawler/template'))
 
@@ -295,6 +340,10 @@ async def init(loop,port):
     app.router.add_route('POST', '/get_spiders', get_spiders)
     app.router.add_route('POST','/deletemq',detetemq)
     app.router.add_route('POST','/deletespider',deletespider)
+    app.router.add_route('GET', '/login', login)
+    app.router.add_route('POST', '/api/login', login1)
+    app.router.add_route('POST', '/logout', logout)
+    app.router.add_route('GET', '/', login)
     app.router.add_static('/static/',
                          path='D:/aioCrawler/aioCrawler/static',
                          name='static')
