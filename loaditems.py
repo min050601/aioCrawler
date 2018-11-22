@@ -35,7 +35,7 @@ class MysqlTwistedPipeline(object):
 
 
     def handle_error(self,failure,item):
-        print(failure)
+        self.spider.failure += 1
         self.log.logging.waring(failure)
 
     def do_insert(self,cursor,item):

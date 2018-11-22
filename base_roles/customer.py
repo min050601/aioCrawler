@@ -85,6 +85,7 @@ class Base_customer(object):
             self.balance+=1
             if self.spider_status[3]==0:
                 self.spider_messages_copy['commit'] = self.spider.commit
+                self.spider_messages_copy['failure'] = self.spider.failure
                 self.spider_messages.put(self.spider_messages_copy)
 
             response = pickle.loads(body)
