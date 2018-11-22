@@ -211,9 +211,11 @@ async def plan_process(request):
                 result = await cur.fetchone()
                 if result[0]!='once':
                     if int(status):
-                        scheduler.pause_job(id)
+                        if scheduler.get_job(id):
+                            scheduler.pause_job(id)
                     else:
-                        scheduler.resume_job(id)
+                        if scheduler.get_job(id):
+                            scheduler.resume_job(id)
                     await cur.execute("update spiderStatus set planned_status=%s where scheduler_id=%s", (0 if int(status) else 1,id))
                 return web.Response(body=json.dumps({"msg": "true", "url": "/user"}, ensure_ascii=False), content_type='text/html')
 
@@ -245,20 +247,17 @@ async def spider_process(request):
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1),id=scheduler_id)
                     elif rule == 'day':
                         if scheduler.get_job(scheduler_id):
-                            if scheduler.get_job(scheduler_id):
-                                scheduler.remove_job(scheduler_id)
+                            scheduler.remove_job(scheduler_id)
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', days=1,id=scheduler_id)
                     elif rule == 'week':
                         if scheduler.get_job(scheduler_id):
-                            if scheduler.get_job(scheduler_id):
-                                scheduler.remove_job(scheduler_id)
+                            scheduler.remove_job(scheduler_id)
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', weeks=1,id=scheduler_id)
                     elif rule == 'month':
                         if scheduler.get_job(scheduler_id):
-                            if scheduler.get_job(scheduler_id):
-                                scheduler.remove_job(scheduler_id)
+                            scheduler.remove_job(scheduler_id)
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='date', run_date=datetime.datetime.now() + datetime.timedelta(seconds=1))
                         scheduler.add_job(func=run, args=(spider, rule, id), trigger='interval', days=30,id=scheduler_id)
                     await asyncio.sleep(3)
@@ -273,8 +272,7 @@ async def deletespider(request):
         scheduler_id=data.get('scheduler_id')
         if scheduler_id:
             if scheduler.get_job(scheduler_id):
-                if scheduler.get_job(scheduler_id):
-                    scheduler.remove_job(scheduler_id)
+                scheduler.remove_job(scheduler_id)
         if id:
             global __pool
             async with __pool.acquire() as conn:
