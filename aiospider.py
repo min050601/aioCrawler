@@ -23,6 +23,7 @@ class Spider(object):
         self.settings.setmodule('aioCrawler.settings', priority='project')
         self.update_settings(self.settings)
         self.log = SpiderLog(level_str=self.settings['LOG_LEVEL'], filename=self.settings['LOG_FILE'], path=self.settings['LOG_PATH'])
+        self.commit=0
         if start:
             return
         self.startsleep = self.settings['START_SLEEP']

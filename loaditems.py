@@ -4,6 +4,7 @@ from twisted.enterprise import adbapi
 class MysqlTwistedPipeline(object):
     def __init__(self,spider):
         self.log=spider.log
+        self.spider=spider
         self.success_count=0
         dbparms = dict(
             host=spider.settings['MYSQL_HOST'],
@@ -29,6 +30,7 @@ class MysqlTwistedPipeline(object):
     def complete_log(self,item):
         self.log.logging.info(item[0]%item[1]+'执行成功')
         self.success_count+=1
+        self.spider.commit+=1
 
 
 

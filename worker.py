@@ -79,7 +79,7 @@ def request_run(Spider,spider_status,q,args):
 
 
 #入库启动函数
-def insert_run(Spider,spider_status,args):
+def insert_run(Spider,spider_status,q,args):
     if args and args.roles == 'worker':
         spider_status[1]=0
         return
@@ -89,7 +89,7 @@ def insert_run(Spider,spider_status,args):
         t = threading.Thread(target=spider.start_request)
         t.start()
     spider.start_insert()
-    customer = Customer(spider,spider_status)
+    customer = Customer(spider,spider_status,q)
     t = threading.Thread(target=customer.start)
     t.start()
     reactor.run()
