@@ -1,26 +1,9 @@
 <!DOCTYPE html>
-<!--
-{% macro pagination(url, page) %}
-    <ul class="uk-pagination">
-        {% if page.has_previous %}
-            <li><a href="{{ url }}{{ page.page_index - 1 }}"><i class="uk-icon-angle-double-left"></i></a></li>
-        {% else %}
-            <li class="uk-disabled"><span><i class="uk-icon-angle-double-left"></i></span></li>
-        {% endif %}
-            <li class="uk-active"><span>{{ page.page_index }}</span></li>
-        {% if page.has_next %}
-            <li><a href="{{ url }}{{ page.page_index + 1 }}"><i class="uk-icon-angle-double-right"></i></a></li>
-        {% else %}
-            <li class="uk-disabled"><span><i class="uk-icon-angle-double-right"></i></span></li>
-        {% endif %}
-    </ul>
-{% endmacro %}
--->
 <html>
 <head>
     <meta charset="utf-8" />
     {% block meta %}<!-- block meta  -->{% endblock %}
-    <title>{% block title %} ? {% endblock %} - 极验打码平台</title>
+    <title>{% block title %} ? {% endblock %} - aioCrawler</title>
     <link rel="stylesheet" href="../static/css/uikit.min.css">
     <link rel="stylesheet" href="../static/css/uikit.gradient.min.css">
     <link rel="stylesheet" href="../static/css/awesome.css" />
@@ -38,25 +21,15 @@
         <div class="uk-container uk-container-center">
             <a class="uk-navbar-brand">wander</a>
             <ul class="uk-navbar-nav">
-                {% if __user__ %}
-                <li data-url="blogs"><a href={{ userUrl }}><i class="uk-icon-home"></i> 账户</a></li>
-                {% endif %}
-                <!--<li><a target="_blank" href="http://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000"><i class="uk-icon-book"></i> 教程</a></li>-->
-                <!--<li><a target="_blank" href="https://github.com/michaelliao/awesome-python3-webapp"><i class="uk-icon-code"></i> 源码</a></li>-->
+                <li data-url="blogs"><a onclick="programs()"><i class="uk-icon-home"></i>项目</a></li>
+             </ul>
+            <ul class="uk-navbar-nav">
+                <li data-url="blogs"><a href="/log"><i class="uk-icon-home"></i> 日志</a></li>
             </ul>
             <ul class="uk-navbar-nav">
                 {% if __user__ %}
-                <li data-url="blogs"><a href={{ logUrl }}><i class="uk-icon-home"></i> 日志</a></li>
+                <li data-url="blogs"><a onclick="queues()"><i class="uk-icon-home"></i>队列</a></li>
                 {% endif %}
-                <!--<li><a target="_blank" href="http://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000"><i class="uk-icon-book"></i> 教程</a></li>-->
-                <!--<li><a target="_blank" href="https://github.com/michaelliao/awesome-python3-webapp"><i class="uk-icon-code"></i> 源码</a></li>-->
-            </ul>
-            <ul class="uk-navbar-nav">
-                {% if __user__ %}
-                <li data-url="blogs"><a href={{ modifyUrl }}><i class="uk-icon-home"></i> 修改密码</a></li>
-                {% endif %}
-                <!--<li><a target="_blank" href="http://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000"><i class="uk-icon-book"></i> 教程</a></li>-->
-                <!--<li><a target="_blank" href="https://github.com/michaelliao/awesome-python3-webapp"><i class="uk-icon-code"></i> 源码</a></li>-->
             </ul>
             <div class="uk-navbar-flip">
                 <ul class="uk-navbar-nav">
@@ -65,8 +38,6 @@
                         <a><i class="uk-icon-user"></i> {{ __user__.name }}</a>
                         <div class="uk-dropdown uk-dropdown-navbar">
                             <ul class="uk-nav uk-nav-navbar">
-                                <li><a onclick="programs()"><i class="uk-icon-sign-out"></i> 项目</a></li>
-                                <li><a onclick="queues()"><i class="uk-icon-sign-out"></i> 队列</a></li>
                                 <li><a onclick="logout()"><i class="uk-icon-sign-out"></i> 登出</a></li>
                             </ul>
                         </div>

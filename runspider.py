@@ -16,8 +16,8 @@ connect = pymysql.Connect(
             host='127.0.0.1',
             port=3306,
             user='root',
-            passwd='root',
-            db='aiocrawler',
+            passwd='Elements123',
+            db='aioCrawler',
             charset='utf8',
             use_unicode=True
         )

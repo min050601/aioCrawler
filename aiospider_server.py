@@ -30,7 +30,7 @@ redis_conn = redis.StrictRedis(connection_pool=redis_pool)
 job_defaults = {'coalesce': True,'max_instances':10}
 executors = {'default': ProcessPoolExecutor(10)}
 scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
-scheduler.add_jobstore('sqlalchemy', url='mysql+pymysql://root:root@127.0.0.1/sqlalchemy')
+scheduler.add_jobstore('sqlalchemy', url='mysql+pymysql://root:Elements123@127.0.0.1/sqlalchemy')
 
 
 def get_sha1(salt):
@@ -337,7 +337,7 @@ async def init(loop,port):
     setup(app,
           EncryptedCookieStorage(b'Thirty  two  length  bytes  key.'))
     aiohttp_jinja2.setup(app,
-                         loader=jinja2.FileSystemLoader('D:/aioCrawler/aioCrawler/template'))
+                         loader=jinja2.FileSystemLoader('/root/wander/git_local/aioCrawler/template'))
 
     app.router.add_route('POST', '/runspider', runspider)
 
@@ -353,15 +353,15 @@ async def init(loop,port):
     app.router.add_route('POST', '/api/login', login1)
     app.router.add_route('POST', '/logout', logout)
     app.router.add_route('GET', '/', login)
-    app.router.add_static('/static/',
-                        path='D:/aioCrawler/aioCrawler/static',
-                        name='static')
+    #app.router.add_static('/static/',
+    #                    path='D:/aioCrawler/aioCrawler/static',
+    #                    name='static')
     app.router.add_get('/ws', websocket_handler)
     app.router.add_get('/qws', mqwebsocket_handler)
     database = {
         'host': '127.0.0.1',  # 数据库的地址
         'user': 'root',
-        'password': 'root',
+        'password': 'Elements123',
         'db': 'aioCrawler'
     }
     await create_pool(loop=loop,**database)
@@ -387,5 +387,5 @@ if __name__=="__main__":
     # loop.run_forever()
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(init(loop, 8000))
+    loop.run_until_complete(init(loop, 8080))
     loop.run_forever()
