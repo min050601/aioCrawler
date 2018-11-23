@@ -30,7 +30,7 @@ redis_conn = redis.StrictRedis(connection_pool=redis_pool)
 job_defaults = {'coalesce': True,'max_instances':10}
 executors = {'default': ProcessPoolExecutor(10)}
 scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
-scheduler.add_jobstore('sqlalchemy', url='mysql+pymysql://root:Elements123@127.0.0.1/sqlalchemy')
+scheduler.add_jobstore('sqlalchemy', url='mysql+pymysql://root:root@127.0.0.1/sqlalchemy')
 
 
 def get_sha1(salt):
@@ -361,7 +361,7 @@ async def init(loop,port):
     database = {
         'host': '127.0.0.1',  # 数据库的地址
         'user': 'root',
-        'password': 'Elements123',
+        'password': 'root',
         'db': 'aioCrawler'
     }
     await create_pool(loop=loop,**database)
