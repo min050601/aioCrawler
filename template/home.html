@@ -274,7 +274,7 @@ $("#next").click(function() {
     var num=0;
     document.getElementById("log").style.display ="block";
     dragFunc("log");
-        websocket = new WebSocket('ws://47.95.249.180:8000/ws');
+        websocket = new WebSocket('ws://127.0.0.1:8000/ws');
         // websocket.send({status:status,spider:spider});
     websocket.onopen = function(event){
     if (websocket.readyState===1) {
@@ -328,7 +328,7 @@ $("#next").click(function() {
         mqpage=1;
 }
     function queues() {
-        qws = new WebSocket('ws://47.95.249.180:8000/qws');
+        qws = new WebSocket('ws://127.0.0.1:8000/qws');
         qws.onopen = function(event){
             if (qws.readyState===1) {
                 qws.send(JSON.stringify({page:mqpage}));
